@@ -55,7 +55,7 @@ interface StreamCallbacks {
 export async function streamGenerate(
   prompt: string,
   callbacks: StreamCallbacks,
-  contextMessages?: { role: string; content: string }[]
+  contextFiles?: GeneratedFile[]
 ) {
   const url = import.meta.env.VITE_GENERATE_ENDPOINT;
   if (!url) {
@@ -67,7 +67,7 @@ export async function streamGenerate(
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, messages: contextMessages }),
+      body: JSON.stringify({ prompt, contextFiles }),
     });
 
     if (!response.ok) {

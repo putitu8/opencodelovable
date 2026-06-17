@@ -1,11 +1,11 @@
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
 
-const SYSTEM_PROMPT = `You are an expert full-stack developer. When a user describes an application, generate complete, production-ready code.
+const BASE_SYSTEM_PROMPT = `You are an expert full-stack developer. When a user describes an application, generate complete, production-ready code.
 
 ## Output format
 
-1. Start with "## Plan" section: a brief bullet list of what you'll build
+1. Start with "## Plan" section: a brief bullet list of what you'll do
 2. Then output each file using this format:
    \`\`\`FILE:<relative-path>
    <code>
@@ -23,6 +23,23 @@ const SYSTEM_PROMPT = `You are an expert full-stack developer. When a user descr
 - For React apps: include index.html, package.json, vite.config.ts, tsconfig.json alongside components.
 - Output package.json with realistic version numbers.
 - Keep file count manageable — merge small files when practical.`;
+
+const MODIFY_SYSTEM_PROMPT = `You are an expert full-stack developer. The user has an existing application and wants to modify it. The current codebase is provided below. Make the requested changes while preserving the rest of the code.
+
+## Output format
+
+1. Start with "## Plan" section: a brief bullet list of what you'll change
+2. Then output EVERY file that should exist after the change using:
+   \`\`\`FILE:<relative-path>
+   <code>
+   \`\`\`
+
+## Rules
+
+- Output ALL files, even unchanged ones — the client will replace the entire project.
+- Keep the existing tech stack and project structure.
+- Make minimal, focused changes per the user's request.
+- Do not introduce breaking changes to unrelated code.`;
 
 export async function main(req, res) {
   // CORS
@@ -42,19 +59,28 @@ export async function main(req, res) {
     return res.status(500).json({ error: "DEEPSEEK_API_KEY not configured" });
   }
 
-  const { prompt, messages: contextMessages } = req.body || {};
+  const { prompt, contextFiles } = req.body || {};
 
   if (!prompt) {
     return res.status(400).json({ error: "prompt is required" });
   }
 
-  const messages = [{ role: "system", content: SYSTEM_PROMPT }];
+  const messages = [];
 
-  if (contextMessages) {
-    messages.push(...contextMessages);
+  if (contextFiles && contextFiles.length > 0) {
+    messages.push({ role: "system", content: MODIFY_SYSTEM_PROMPT });
+    // Inject existing codebase as context
+    const codeContext = contextFiles
+      .map((f) => `// FILE: ${f.path}\n${f.content}`)
+      .join("\n\n");
+    messages.push({
+      role: "user",
+      content: `Here is the current codebase:\n\n${codeContext}\n\nRequested change: ${prompt}`,
+    });
+  } else {
+    messages.push({ role: "system", content: BASE_SYSTEM_PROMPT });
+    messages.push({ role: "user", content: prompt });
   }
-
-  messages.push({ role: "user", content: prompt });
 
   try {
     const response = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
