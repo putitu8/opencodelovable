@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "openapi": []
+  },
+  "triggers": [
+    {
+      "name": "generate",
+      "type": "http",
+      "config": {}
+    }
+  ],
+  "timeout": 300,
+  "envVariables": {
+    "DEEPSEEK_API_KEY": "",
+    "DEEPSEEK_BASE_URL": "https://api.deepseek.com"
+  }
+}

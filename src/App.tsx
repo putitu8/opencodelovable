@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { getAuth } from "./lib/cloudbase";
 import Auth from "./components/Auth";
 import ProjectList from "./components/ProjectList";
+import ProjectDetail from "./components/ProjectDetail";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [authed, setAuthed] = useState<boolean | null>(null);
@@ -32,17 +33,6 @@ function LoginPage() {
   return <Auth />;
 }
 
-function ProjectPage() {
-  const id = window.location.pathname.split("/")[2];
-  return (
-    <div style={{ maxWidth: 640, margin: "2rem auto", padding: "1rem" }}>
-      <a href="/projects">&larr; 返回项目列表</a>
-      <h1>项目 {id}</h1>
-      <p>项目详情页（待实现）</p>
-    </div>
-  );
-}
-
 export default function App() {
   return (
     <BrowserRouter>
@@ -60,7 +50,7 @@ export default function App() {
           path="/projects/:id"
           element={
             <ProtectedRoute>
-              <ProjectPage />
+              <ProjectDetail />
             </ProtectedRoute>
           }
         />
